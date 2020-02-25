@@ -1,0 +1,3 @@
+Projeto realizado para estudos de Angular do curso da Alura
+
+Giovanna Menegoli
