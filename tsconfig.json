@@ -2,7 +2,8 @@
     "compilerOptions": {
         "target": "es6", //Sera traduzido para es6
         "outDir": "app/js",
-        "noEmitOnError": true
+        "noEmitOnError": true,
+        "noImplicitAny": false
     },
     "include": [ //indica os arquivos que devem ser levados em consideração
         "app/ts/**/*"
