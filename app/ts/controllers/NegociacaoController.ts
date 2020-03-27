@@ -10,17 +10,25 @@ import {
     domInject,
     throttle
 } from '../helpers/decoratos/index';
-import {NegociacaoService} from '../service/index';
+import {
+    NegociacaoService
+} from '../service/index';
+import {
+    imprime
+} from '../helpers/index';
 
 let timer = 0;
 export class NegociacaoController {
 
     @domInject("#data")
     private _inputData: JQuery;
+
     @domInject("#quantidade")
     private _inputQuantidade: JQuery;
+
     @domInject("#valor")
     private _inputValor: JQuery;
+
     private _negociacoes = new Negociacoes();
     private _negociacoesView = new NegociacoesView('#negociacoesView');
     private _mensagemView = new MensagemView('#mensagemView');
@@ -33,11 +41,9 @@ export class NegociacaoController {
 
     @throttle()
     adiciona() {
-
         let data = new Date(this._inputData.val().replace(/-/g, ','));
 
         if (!this._ehDiaUtil(data)) {
-
             this._mensagemView.update('Somente negociações em dias úteis, por favor!');
             return
         }
@@ -49,7 +55,7 @@ export class NegociacaoController {
         );
 
         this._negociacoes.adiciona(negociacao);
-
+        imprime(negociacao, this._negociacoes);
         this._negociacoesView.update(this._negociacoes);
         this._mensagemView.update('Negociação adicionada com sucesso!');
     }
@@ -58,28 +64,42 @@ export class NegociacaoController {
 
         return data.getDay() != DiaDaSemana.Sabado && data.getDay() != DiaDaSemana.Domingo;
     }
+
     @throttle()
-    importarDados() {
-        
-        this._service
-        .obterNegociacoes(res => {
-            if (res.ok) {
-                return res;
-            } else {
-                throw new Error(res.statusText);
-            }
-        })
-        .then(negociacoes =>{
-                   
-            negociacoes.forEach(negociacao => 
-                this._negociacoes.adiciona(negociacao));
+    async importarDados() {
 
-                this._negociacoesView.update(this._negociacoes);
+        try {
 
-            });
-      
+            // usou await antes da chamada de this.service.obterNegociacoes()
+
+            const negociacoesParaImportar = await this._service
+                .obterNegociacoes(res => {
+
+                    if (res.ok) {
+                        return res;
+                    } else {
+                        throw new Error(res.statusText);
+                    }
+                });
+
+            const negociacoesJaImportadas = this._negociacoes.paraArray();
+
+            negociacoesParaImportar
+                .filter(negociacao =>
+                    !negociacoesJaImportadas.some(jaImportada =>
+                        negociacao.ehIgual(jaImportada)))
+                .forEach(negociacao =>
+                    this._negociacoes.adiciona(negociacao));
+
+            this._negociacoesView.update(this._negociacoes);
+
+        } catch (err) {
+            this._mensagemView.update(err.message);
+        }
+
     }
 }
+
 
 enum DiaDaSemana {
 
