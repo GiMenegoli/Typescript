@@ -1,37 +1,49 @@
-import { NegociacoesView, MensagemView } from '../views/index';
-import { Negociacao, Negociacoes } from '../models/index';
-import {domInject} from '../helpers/decoratos/domInject'
+import {
+    NegociacoesView,
+    MensagemView
+} from '../views/index';
+import {
+    Negociacao,
+    Negociacoes
+} from '../models/index';
+import {
+    domInject,
+    throttle
+} from '../helpers/decoratos/index';
+import {NegociacaoService} from '../service/index';
 
+let timer = 0;
 export class NegociacaoController {
 
-    @domInject("#data");
+    @domInject("#data")
     private _inputData: JQuery;
-    @domInject("#quantidade");
+    @domInject("#quantidade")
     private _inputQuantidade: JQuery;
-    @domInject("#valor");
+    @domInject("#valor")
     private _inputValor: JQuery;
     private _negociacoes = new Negociacoes();
     private _negociacoesView = new NegociacoesView('#negociacoesView');
     private _mensagemView = new MensagemView('#mensagemView');
-    
-    constructor() {  
+
+    private _service = new NegociacaoService();
+
+    constructor() {
         this._negociacoesView.update(this._negociacoes);
     }
-    
-    adiciona(event: Event) {
 
-        event.preventDefault();
+    @throttle()
+    adiciona() {
 
         let data = new Date(this._inputData.val().replace(/-/g, ','));
 
-        if(!this._ehDiaUtil(data)) {
+        if (!this._ehDiaUtil(data)) {
 
             this._mensagemView.update('Somente negociações em dias úteis, por favor!');
-            return 
+            return
         }
 
         const negociacao = new Negociacao(
-            data, 
+            data,
             parseInt(this._inputQuantidade.val()),
             parseFloat(this._inputValor.val())
         );
@@ -46,15 +58,36 @@ export class NegociacaoController {
 
         return data.getDay() != DiaDaSemana.Sabado && data.getDay() != DiaDaSemana.Domingo;
     }
+    @throttle()
+    importarDados() {
+        
+        this._service
+        .obterNegociacoes(res => {
+            if (res.ok) {
+                return res;
+            } else {
+                throw new Error(res.statusText);
+            }
+        })
+        .then(negociacoes =>{
+                   
+            negociacoes.forEach(negociacao => 
+                this._negociacoes.adiciona(negociacao));
+
+                this._negociacoesView.update(this._negociacoes);
+
+            });
+      
+    }
 }
 
 enum DiaDaSemana {
 
-    Domingo, 
-    Segunda, 
-    Terca, 
-    Quarta, 
-    Quinta, 
-    Sexta, 
+    Domingo,
+    Segunda,
+    Terca,
+    Quarta,
+    Quinta,
+    Sexta,
     Sabado
 }
