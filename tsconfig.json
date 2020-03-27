@@ -6,7 +6,8 @@
         "noImplicitAny": true,
         "removeComments": true,
         "module": "system",
-        "strictNullChecks": true
+        "strictNullChecks": true,
+        "experimentalDecorators": true
 
     },
     "include": [ //indica os arquivos que devem ser levados em consideração
